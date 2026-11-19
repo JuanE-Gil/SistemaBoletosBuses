@@ -207,24 +207,24 @@ Todos trabajan sobre una copia y **solo cuentan boletos activos**.
 ### 3.14 `app.Consultas` — flujos del submenú Consultas
 | Método | Función |
 |---|---|
-| `buscar(sc, g)` |→ 2: pide origen/destino/fecha y usa la sobrecarga que corresponda |
-| `verMapa(sc, g)` |→ 3: plano del bus del viaje indicado |
+| `buscar(sc, g)` | Consultas→2: pide origen/destino/fecha y usa la sobrecarga que corresponda |
+| `verMapa(sc, g)` | Consultas→3: plano del bus del viaje indicado |
 
 ### 3.15 `app.Boletos` — flujos del submenú Boletos
 | Método | Función |
 |---|---|
-| `vender(sc, g)` |→ 1: pide viaje, cliente (DNI/correo validados), asiento, maletas y pago; captura las 3 excepciones posibles |
+| `vender(sc, g)` | Boletos→1: pide viaje, cliente (DNI/correo validados), asiento, maletas y pago; captura las 3 excepciones posibles |
 | `pedirMaletas(sc, g, cod)` | Pide maleta 1; ofrece la adicional **solo si** pesa ≤ 25 kg y el bus tiene cupo para 2 |
 | `leerPeso(sc, mensaje)` | Pide peso validando con `validarPeso` (reintenta) |
-| `anular(sc, g)` |→ 2 |
-| `reprogramar(sc, g)` |→ 3: muestra el plano del viaje destino antes de pedir el asiento; captura excepciones |
+| `anular(sc, g)` | Boletos→2 |
+| `reprogramar(sc, g)` | Boletos→3: muestra el plano del viaje destino antes de pedir el asiento; captura excepciones |
 | `elegirMedioPago(sc)` | 1. EFECTIVO · 2. TARJETA · 3. YAPE (reintenta fuera de rango); constante `MEDIOS_DE_PAGO` |
 
 ### 3.16 `app.Registro` — flujos del submenú Registro
 | Método | Función |
 |---|---|
-| `registrarBus(sc, g)` |→ 1: placa (no vacía, no duplicada) + filas/columnas (ver §4.8) |
-| `registrarViaje(sc, g)` |→ 2: alta de viaje con todas las validaciones; **pide la placa de un bus ya registrado** (ver §4.9) |
+| `registrarBus(sc, g)` | Registro→1: placa (no vacía, no duplicada) + filas/columnas (ver §4.8) |
+| `registrarViaje(sc, g)` | Registro→2: alta de viaje con todas las validaciones; **pide la placa de un bus ya registrado** (ver §4.9) |
 
 ---
 
@@ -344,15 +344,16 @@ Compilación limpia con `javac --release 21` y pruebas por script (entradas pipe
 8. **Regresión de equipaje** — sobrepeso fraccional (25.5 kg → S/ 2.5) y extremos (30 kg → S/ 25 → boleto S/ 105).
 9. **Menú por categorías** — navegación completa por los 4 submenús (consultas, boletos, reportes) con `0. Volver`, opciones inválidas y no numéricas reintentadas.
 10. **Aislamiento de estado** — dos viajes con la **misma placa**: vendido un asiento en el primero, el mapa del segundo queda **libre** (prueba de `copia()`).
+11. **Refactor `app/`** — tras extraer `Consultas`/`Boletos`/`Registro` de `Main` (377 → 152 líneas), las baterías 4, 5, 9 y 10 se re-ejecutaron con **los mismos guiones**: salida idéntica, sin excepciones (cero cambio de comportamiento).
 
 ---
 
 ## 7. Flujo de desarrollo (git)
 
 - `master`: estado estable del proyecto.
-- Ramas `feature/…` para cada caso de uso; se fusionan a `master` con **fast-forward** tras pasar las pruebas.
+- Ramas `feature/…` (casos de uso) y `refactor/…` (refactors) para cada cambio; se fusionan a `master` con **fast-forward** tras pasar las pruebas.
 - Commits en español, descriptivos del caso de uso.
-- Historial: `13bb3a0` refactor base → `6e79cd1` reportes → `ec288cb` equipaje → `2c571af` fixes de pruebas → `7a6ef8d` registrar viaje + reporte por fecha → `2f386ad` guía → `8506456` submenús + flota → (master) `c85ce5b` guía de flota → refactor de `Main` en `app/Consultas|Boletos|Registro`.
+- Historial: `13bb3a0` refactor base → `6e79cd1` reportes → `ec288cb` equipaje → `2c571af` fixes de pruebas → `7a6ef8d` registrar viaje + reporte por fecha → `2f386ad` guía → `8506456` submenús + flota → `c85ce5b` guía de flota (fusionado a `master`) → `438b0fd` modulariza `Main` en `app/Consultas|Boletos|Registro` → `43d9406` guía modular.
 
 ---
 
