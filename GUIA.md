@@ -82,6 +82,8 @@ SistemaBoletosBuses/
 ### 3.1 `model.Ruta`
 Recorrido con su tarifa. `toString` → `Lima - Arequipa (S/ 80.0)`.
 
+**Atributos:** `origen` · `destino` (String) · `tarifa` (double)
+
 | Método | Función |
 |---|---|
 | `Ruta(origen, destino, tarifa)` | Crea la ruta |
@@ -89,7 +91,9 @@ Recorrido con su tarifa. `toString` → `Lima - Arequipa (S/ 80.0)`.
 | `toString()` | Formo para mostrar en listados y boletos |
 
 ### 3.2 `model.Bus`
-Un bus por viaje: matriz de asientos + contador de maletas. Constante `MAX_MALETAS = 20`.
+Un bus por viaje: matriz de asientos + contador de maletas.
+
+**Atributos:** `MAX_MALETAS` (`static final` = 20) · `placa` (String) · `asientos` (matriz `Asiento[][]`) · `maletasCargadas` (int, inicia 0)
 
 | Método | Función |
 |---|---|
@@ -106,6 +110,8 @@ Un bus por viaje: matriz de asientos + contador de maletas. Constante `MAX_MALET
 ### 3.3 `model.Asiento`
 Butaca individual.
 
+**Atributos:** `numeroAsiento` (String) · `estado` (boolean, `true` = ocupado)
+
 | Método | Función |
 |---|---|
 | `Asiento(numeroAsiento)` | Crea libre (`estado = false`) |
@@ -116,12 +122,16 @@ Butaca individual.
 ### 3.4 `model.Viaje`
 Salida programada. `toString` → `V001 | Lima - Arequipa (S/ 80.0) | 15/11/2026 20:00 | Libres: 19`.
 
+**Atributos** (todos `final`, inmutables tras el alta): `codigo` · `ruta` · `bus` · `fecha` · `hora` (String)
+
 | Método | Función |
 |---|---|
 | `Viaje(codigo, ruta, bus, fecha, hora)` | Crea el viaje (fecha `dd/MM/yyyy`, hora `HH:mm`) |
 | `getCodigo() / getRuta() / getBus() / getFecha()` | Accesores (el código busca sin distinguir mayúsculas) |
 
 ### 3.5 `model.Cliente`
+**Atributos:** `dni` · `nombre` · `apellido` · `correo` · `telefono` (String)
+
 | Método | Función |
 |---|---|
 | `Cliente(dni, nombre, apellido, correo, telefono)` | Registra al pasajero |
@@ -129,7 +139,7 @@ Salida programada. `toString` → `V001 | Lima - Arequipa (S/ 80.0) | 15/11/2026
 | `toString()` | `Apellido, Nombre | DNI | correo | teléfono` |
 
 ### 3.6 `model.Maleta`
-Constantes: `LIMITE_KG = 25`, `TARIFA_SOBREPESO = 5.0` (S/ por kg excedido).
+**Atributos:** `LIMITE_KG` (`static final` = 25) · `TARIFA_SOBREPESO` (`static final` = 5.0, S/ por kg excedido) · `peso` · `sobrepeso` (double)
 
 | Método | Función |
 |---|---|
@@ -138,6 +148,8 @@ Constantes: `LIMITE_KG = 25`, `TARIFA_SOBREPESO = 5.0` (S/ por kg excedido).
 | `toString()` | `30.0 kg (sobrepeso: S/ 25.0)` |
 
 ### 3.7 `model.Pago`
+**Atributos:** `monto` (double) · `medioPago` · `fecha` (String, fecha de venta `dd/MM/yyyy`)
+
 | Método | Función |
 |---|---|
 | `Pago(monto, medioPago, fecha)` | Monto = tarifa + sobrepesos; `fecha` = fecha de venta (`dd/MM/yyyy`) |
@@ -146,6 +158,8 @@ Constantes: `LIMITE_KG = 25`, `TARIFA_SOBREPESO = 5.0` (S/ por kg excedido).
 
 ### 3.8 `model.Boleto`
 Emisión de un pasaje. Se muestra completo al vender/reprogramar; `[ANULADO]` al final si está anulado.
+
+**Atributos:** `codigo` · `cliente` · `pago` · `maletas` (`final`) · `viaje` · `fila` · `columna` (los tres últimos mutables por reprogramación) · `activo` (boolean, `true` por defecto)
 
 | Método | Función |
 |---|---|
@@ -156,7 +170,9 @@ Emisión de un pasaje. Se muestra completo al vender/reprogramar; `[ANULADO]` al
 | `toString()` | Ficha completa: cliente, ruta, asiento, equipaje, pago |
 
 ### 3.9 `service.GestorVentas` — núcleo del sistema
-Arreglos fijos: **20 buses (flota)**, **20 viajes** y **200 boletos**.
+Arreglos fijos con su contador de llenado.
+
+**Atributos:** `buses[20]` · `viajes[20]` · `boletos[200]` (arreglos) · `cantidadBuses` · `cantidadViajes` · `cantidadBoletos` (int)
 
 | Método | Función y validaciones (en orden) |
 |---|---|
@@ -211,6 +227,8 @@ Todos trabajan sobre una copia y **solo cuentan boletos activos**.
 | `verMapa(sc, g)` | Consultas→3: plano del bus del viaje indicado |
 
 ### 3.15 `app.Boletos` — flujos del submenú Boletos
+**Atributos:** `MEDIOS_DE_PAGO` (`static final` = {EFECTIVO, TARJETA, YAPE})
+
 | Método | Función |
 |---|---|
 | `vender(sc, g)` | Boletos→1: pide viaje, cliente (DNI/correo validados), asiento, maletas y pago; captura las 3 excepciones posibles |
@@ -218,7 +236,7 @@ Todos trabajan sobre una copia y **solo cuentan boletos activos**.
 | `leerPeso(sc, mensaje)` | Pide peso validando con `validarPeso` (reintenta) |
 | `anular(sc, g)` | Boletos→2 |
 | `reprogramar(sc, g)` | Boletos→3: muestra el plano del viaje destino antes de pedir el asiento; captura excepciones |
-| `elegirMedioPago(sc)` | 1. EFECTIVO · 2. TARJETA · 3. YAPE (reintenta fuera de rango); constante `MEDIOS_DE_PAGO` |
+| `elegirMedioPago(sc)` | 1. EFECTIVO · 2. TARJETA · 3. YAPE (reintenta fuera de rango) |
 
 ### 3.16 `app.Registro` — flujos del submenú Registro
 | Método | Función |
