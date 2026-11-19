@@ -1,8 +1,11 @@
 package model;
 
 public class Bus {
+    public static final int MAX_MALETAS = 20;
+
     private String placa;
     private Asiento[][] asientos;
+    private int maletasCargadas = 0;
 
     public Bus(String placa, int filas, int columnas) {
         this.placa = placa;
@@ -30,6 +33,18 @@ public class Bus {
 
     public void liberarAsiento(int fila, int columna) {
         asientos[fila - 1][columna - 1].liberar();
+    }
+
+    public int maletasDisponibles() {
+        return MAX_MALETAS - maletasCargadas;
+    }
+
+    public void cargarMaleta() {
+        maletasCargadas++;
+    }
+
+    public void descargarMaleta() {
+        maletasCargadas--;
     }
 
     public int contarAsientosLibres() {

@@ -118,14 +118,46 @@ public class Main {
         String telefono = sc.nextLine().trim();
         int fila = Validador.leerEntero(sc, "Fila: ");
         int col = Validador.leerEntero(sc, "Columna: ");
+        Maleta[] maletas = pedirMaletas(sc, g, cod);
         int medio = elegirMedioPago(sc);
 
         try {
             Cliente cliente = new Cliente(dni, nombre, apellido, correo, telefono);
-            Boleto b = g.venderBoleto(cod, cliente, fila, col, MEDIOS_DE_PAGO[medio - 1]);
+            Boleto b = g.venderBoleto(cod, cliente, fila, col, MEDIOS_DE_PAGO[medio - 1], maletas);
             System.out.println("\n" + b);
         } catch (AsientoOcupadoException | IllegalArgumentException | IllegalStateException e) {
             System.out.println("No se pudo vender: " + e.getMessage());
+        }
+    }
+
+    private static Maleta[] pedirMaletas(Scanner sc, GestorVentas g, String codViaje) {
+        double peso1 = leerPeso(sc, "Peso de la maleta 1 (kg): ");
+        Maleta m1 = new Maleta(peso1);
+        System.out.println("Maleta 1: " + m1);
+
+        // solo califica para maleta adicional si está dentro del límite y hay cupo para 2 en el bus
+        if (peso1 > Maleta.LIMITE_KG) return new Maleta[]{m1};
+
+        Viaje viaje = g.buscarViaje(codViaje);
+        if (viaje == null || viaje.getBus().maletasDisponibles() < 2) {
+            System.out.println("Sin disponibilidad para maleta adicional.");
+            return new Maleta[]{m1};
+        }
+        System.out.print("¿Desea agregar una maleta adicional? (sí/no): ");
+        String resp = sc.nextLine().trim();
+        if (!resp.equalsIgnoreCase("sí") && !resp.equalsIgnoreCase("si")) return new Maleta[]{m1};
+
+        double peso2 = leerPeso(sc, "Peso de la maleta 2 (kg): ");
+        Maleta m2 = new Maleta(peso2);
+        System.out.println("Maleta 2: " + m2);
+        return new Maleta[]{m1, m2};
+    }
+
+    private static double leerPeso(Scanner sc, String mensaje) {
+        while (true) {
+            double peso = Validador.leerDecimal(sc, mensaje);
+            if (Validador.validarPeso(peso)) return peso;
+            System.out.println("Peso inválido (debe ser mayor a 0).");
         }
     }
 

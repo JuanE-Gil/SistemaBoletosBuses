@@ -48,7 +48,8 @@ public class GestorVentas {
 
     // ---- boletos ----
 
-    public Boleto venderBoleto(String codViaje, Cliente cliente, int fila, int columna, String medioPago)
+    public Boleto venderBoleto(String codViaje, Cliente cliente, int fila, int columna, String medioPago,
+                               Maleta[] maletas)
             throws AsientoOcupadoException {
         Viaje viaje = buscarViaje(codViaje);
         if (viaje == null) {
@@ -61,14 +62,30 @@ public class GestorVentas {
         if (!bus.asientoLibre(fila, columna)) {
             throw new AsientoOcupadoException("El asiento ya está ocupado.");
         }
+        if (maletas.length < 1 || maletas.length > 2) {
+            throw new IllegalArgumentException("Máximo 2 maletas por boleto.");
+        }
+        for (Maleta m : maletas) {
+            if (m.getPeso() <= 0) {
+                throw new IllegalArgumentException("Peso de maleta inválido.");
+            }
+        }
+        if (bus.maletasDisponibles() < maletas.length) {
+            throw new IllegalStateException("Cupo de equipaje lleno.");
+        }
         if (cantidadBoletos >= boletos.length) {
             throw new IllegalStateException("Capacidad de boletos llena.");
         }
+
+        double monto = viaje.getRuta().getTarifa();
+        for (Maleta m : maletas) monto += m.getSobrepeso();
         String fechaVenta = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        Pago pago = new Pago(viaje.getRuta().getTarifa(), medioPago, fechaVenta);
+        Pago pago = new Pago(monto, medioPago, fechaVenta);
+
         bus.ocuparAsiento(fila, columna);
+        for (int i = 0; i < maletas.length; i++) bus.cargarMaleta();
         String codigo = "B" + String.format("%04d", cantidadBoletos + 1);
-        Boleto boleto = new Boleto(codigo, cliente, viaje, fila, columna, pago);
+        Boleto boleto = new Boleto(codigo, cliente, viaje, fila, columna, pago, maletas);
         boletos[cantidadBoletos++] = boleto;
         return boleto;
     }
@@ -90,8 +107,14 @@ public class GestorVentas {
         if (!busNuevo.asientoLibre(nuevaFila, nuevaColumna)) {
             throw new AsientoOcupadoException("El asiento ya está ocupado.");
         }
+        Bus busViejo = boleto.getViaje().getBus();
+        if (busNuevo.maletasDisponibles() < boleto.getMaletas().length) {
+            throw new IllegalStateException("Cupo de equipaje lleno en el bus destino.");
+        }
         busNuevo.ocuparAsiento(nuevaFila, nuevaColumna);
-        boleto.getViaje().getBus().liberarAsiento(boleto.getFila(), boleto.getColumna());
+        for (int i = 0; i < boleto.getMaletas().length; i++) busNuevo.cargarMaleta();
+        busViejo.liberarAsiento(boleto.getFila(), boleto.getColumna());
+        for (int i = 0; i < boleto.getMaletas().length; i++) busViejo.descargarMaleta();
         boleto.reprogramar(nuevoViaje, nuevaFila, nuevaColumna);
         return boleto;
     }
@@ -99,7 +122,9 @@ public class GestorVentas {
     public boolean anularBoleto(String codigo) {
         Boleto boleto = buscarBoletoActivo(codigo);
         if (boleto == null) return false;
-        boleto.getViaje().getBus().liberarAsiento(boleto.getFila(), boleto.getColumna());
+        Bus bus = boleto.getViaje().getBus();
+        bus.liberarAsiento(boleto.getFila(), boleto.getColumna());
+        for (int i = 0; i < boleto.getMaletas().length; i++) bus.descargarMaleta();
         boleto.setActivo(false);
         return true;
     }

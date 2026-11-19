@@ -8,14 +8,16 @@ public class Boleto {
     private int columna;
     private final Pago pago;
     private boolean activo = true;
+    private Maleta[] maletas;
 
-    public Boleto(String codigo, Cliente cliente, Viaje viaje, int fila, int columna, Pago pago) {
+    public Boleto(String codigo, Cliente cliente, Viaje viaje, int fila, int columna, Pago pago, Maleta[] maletas) {
         this.codigo = codigo;
         this.cliente = cliente;
         this.viaje = viaje;
         this.fila = fila;
         this.columna = columna;
         this.pago = pago;
+        this.maletas = maletas;
     }
 
     public String getCodigo() {
@@ -42,6 +44,10 @@ public class Boleto {
         return pago;
     }
 
+    public Maleta[] getMaletas() {
+        return maletas;
+    }
+
     public boolean isActivo() {
         return activo;
     }
@@ -58,8 +64,15 @@ public class Boleto {
 
     @Override
     public String toString() {
-        return "Boleto " + codigo + "\n" + cliente + "\n" + viaje.getRuta()
-                + "\nAsiento: fila " + fila + ", columna " + columna
-                + "\nPago: " + pago + (activo ? "" : "  [ANULADO]");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Boleto ").append(codigo).append("\n")
+          .append(cliente).append("\n")
+          .append(viaje.getRuta()).append("\n")
+          .append("Asiento: fila ").append(fila).append(", columna ").append(columna).append("\n")
+          .append("Equipaje:");
+        for (Maleta m : maletas) sb.append("\n  - ").append(m);
+        sb.append("\nPago: ").append(pago);
+        if (!activo) sb.append("  [ANULADO]");
+        return sb.toString();
     }
 }
