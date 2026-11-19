@@ -22,34 +22,16 @@ public class Main {
             op = Validador.leerEntero(sc, "Opción: ");
             switch (op) {
                 case 1:
-                    System.out.println(gestor.listarViajes());
+                    submenuConsultas(sc, gestor);
                     break;
                 case 2:
-                    buscar(sc, gestor);
+                    submenuBoletos(sc, gestor);
                     break;
                 case 3:
-                    verMapa(sc, gestor);
+                    submenuRegistro(sc, gestor);
                     break;
                 case 4:
-                    vender(sc, gestor);
-                    break;
-                case 5:
-                    anular(sc, gestor);
-                    break;
-                case 6:
-                    reprogramar(sc, gestor);
-                    break;
-                case 7:
-                    System.out.println(Reportes.total(gestor.getBoletos()));
-                    break;
-                case 8:
-                    System.out.println(Reportes.porRuta(gestor.getBoletos()));
-                    break;
-                case 9:
-                    registrarViaje(sc, gestor);
-                    break;
-                case 10:
-                    System.out.println(Reportes.porFecha(gestor.getBoletos()));
+                    submenuReportes(sc, gestor);
                     break;
                 case 0:
                     System.out.println("Hasta pronto.");
@@ -61,18 +43,116 @@ public class Main {
     }
 
     private static void mostrarMenu() {
-        System.out.println("\n=== VENTA DE BOLETOS ===");
-        System.out.println("1. Ver viajes");
-        System.out.println("2. Buscar viajes (origen/destino)");
-        System.out.println("3. Ver mapa de asientos");
-        System.out.println("4. Vender boleto");
-        System.out.println("5. Anular boleto");
-        System.out.println("6. Reprogramar boleto");
-        System.out.println("7. Reporte de ventas");
-        System.out.println("8. Reporte por ruta");
-        System.out.println("9. Registrar viaje");
-        System.out.println("10. Reporte por fecha");
+        System.out.println("\n=== SISTEMA DE VENTA DE BOLETOS ===");
+        System.out.println("1. Consultas");
+        System.out.println("2. Boletos");
+        System.out.println("3. Registro");
+        System.out.println("4. Reportes");
         System.out.println("0. Salir");
+    }
+
+    private static void submenuConsultas(Scanner sc, GestorVentas g) {
+        int op;
+        do {
+            System.out.println("\n--- CONSULTAS ---");
+            System.out.println("1. Ver viajes");
+            System.out.println("2. Buscar viajes (origen/destino)");
+            System.out.println("3. Ver mapa de asientos");
+            System.out.println("0. Volver");
+            op = Validador.leerEntero(sc, "Opción: ");
+            switch (op) {
+                case 1:
+                    System.out.println(g.listarViajes());
+                    break;
+                case 2:
+                    buscar(sc, g);
+                    break;
+                case 3:
+                    verMapa(sc, g);
+                    break;
+                case 0:
+                    break;
+                default:
+                    System.out.println("Opción inválida.");
+            }
+        } while (op != 0);
+    }
+
+    private static void submenuBoletos(Scanner sc, GestorVentas g) {
+        int op;
+        do {
+            System.out.println("\n--- BOLETOS ---");
+            System.out.println("1. Vender boleto");
+            System.out.println("2. Anular boleto");
+            System.out.println("3. Reprogramar boleto");
+            System.out.println("0. Volver");
+            op = Validador.leerEntero(sc, "Opción: ");
+            switch (op) {
+                case 1:
+                    vender(sc, g);
+                    break;
+                case 2:
+                    anular(sc, g);
+                    break;
+                case 3:
+                    reprogramar(sc, g);
+                    break;
+                case 0:
+                    break;
+                default:
+                    System.out.println("Opción inválida.");
+            }
+        } while (op != 0);
+    }
+
+    private static void submenuRegistro(Scanner sc, GestorVentas g) {
+        int op;
+        do {
+            System.out.println("\n--- REGISTRO ---");
+            System.out.println("1. Registrar bus");
+            System.out.println("2. Registrar viaje");
+            System.out.println("0. Volver");
+            op = Validador.leerEntero(sc, "Opción: ");
+            switch (op) {
+                case 1:
+                    registrarBus(sc, g);
+                    break;
+                case 2:
+                    registrarViaje(sc, g);
+                    break;
+                case 0:
+                    break;
+                default:
+                    System.out.println("Opción inválida.");
+            }
+        } while (op != 0);
+    }
+
+    private static void submenuReportes(Scanner sc, GestorVentas g) {
+        int op;
+        do {
+            System.out.println("\n--- REPORTES ---");
+            System.out.println("1. Reporte de ventas");
+            System.out.println("2. Reporte por ruta");
+            System.out.println("3. Reporte por fecha");
+            System.out.println("0. Volver");
+            op = Validador.leerEntero(sc, "Opción: ");
+            switch (op) {
+                case 1:
+                    System.out.println(Reportes.total(g.getBoletos()));
+                    break;
+                case 2:
+                    System.out.println(Reportes.porRuta(g.getBoletos()));
+                    break;
+                case 3:
+                    System.out.println(Reportes.porFecha(g.getBoletos()));
+                    break;
+                case 0:
+                    break;
+                default:
+                    System.out.println("Opción inválida.");
+            }
+        } while (op != 0);
     }
 
     private static void buscar(Scanner sc, GestorVentas g) {
@@ -208,6 +288,27 @@ public class Main {
         return op;
     }
 
+    private static void registrarBus(Scanner sc, GestorVentas g) {
+        System.out.print("Placa: ");
+        String placa = sc.nextLine().trim();
+        if (placa.isEmpty()) {
+            System.out.println("La placa no puede estar vacía.");
+            return;
+        }
+        if (g.buscarBus(placa) != null) {
+            System.out.println("Esa placa ya existe.");
+            return;
+        }
+        int filas = Validador.leerEntero(sc, "Filas de asientos: ");
+        int columnas = Validador.leerEntero(sc, "Columnas de asientos: ");
+        try {
+            g.agregarBus(placa, filas, columnas);
+            System.out.println("Bus registrado: " + placa + " (" + filas + " filas x " + columnas + " columnas)");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("No se pudo registrar: " + e.getMessage());
+        }
+    }
+
     private static void registrarViaje(Scanner sc, GestorVentas g) {
         System.out.print("Código de viaje: ");
         String cod = sc.nextLine().trim();
@@ -254,13 +355,13 @@ public class Main {
 
         System.out.print("Placa del bus: ");
         String placa = sc.nextLine().trim();
-        int filas = Validador.leerEntero(sc, "Filas de asientos: ");
-        int columnas = Validador.leerEntero(sc, "Columnas de asientos: ");
+        if (g.buscarBus(placa) == null) {
+            System.out.println("No existe ese bus. Regístrelo primero (menú Registro).");
+            return;
+        }
 
         try {
-            Viaje viaje = new Viaje(cod, new Ruta(origen, destino, tarifa),
-                    new Bus(placa, filas, columnas), fecha, hora);
-            g.agregarViaje(viaje);
+            Viaje viaje = g.agregarViaje(cod, new Ruta(origen, destino, tarifa), placa, fecha, hora);
             System.out.println("\nViaje registrado:\n" + viaje);
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println("No se pudo registrar: " + e.getMessage());
@@ -268,7 +369,9 @@ public class Main {
     }
 
     private static void cargarDatosDemo(GestorVentas g) {
-        g.agregarViaje(new Viaje("V001", new Ruta("Lima", "Arequipa", 80), new Bus("ABC-123", 5, 4), "15/11/2026", "20:00"));
-        g.agregarViaje(new Viaje("V002", new Ruta("Lima", "Trujillo", 60), new Bus("XYZ-789", 5, 4), "16/11/2026", "22:30"));
+        g.agregarBus("ABC-123", 5, 4);
+        g.agregarBus("XYZ-789", 5, 4);
+        g.agregarViaje("V001", new Ruta("Lima", "Arequipa", 80), "ABC-123", "15/11/2026", "20:00");
+        g.agregarViaje("V002", new Ruta("Lima", "Trujillo", 60), "XYZ-789", "16/11/2026", "22:30");
     }
 }

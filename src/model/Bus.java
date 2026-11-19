@@ -8,15 +8,20 @@ public class Bus {
     private int maletasCargadas = 0;
 
     public Bus(String placa, int filas, int columnas) {
-        // límites: filas 0/negativas rompen contarAsientosLibres, tamaños enormes agotan memoria
-        if (filas < 1 || filas > 100 || columnas < 1 || columnas > 50) {
-            throw new IllegalArgumentException("Dimensiones de bus inválidas (filas 1-100, columnas 1-50).");
+        // límites realistas (bus interprovincial/doble piso) y anti-asignación gigante
+        if (filas < 1 || filas > 40 || columnas < 1 || columnas > 6) {
+            throw new IllegalArgumentException("Dimensiones de bus inválidas (filas 1-40, columnas 1-6).");
         }
         this.placa = placa;
         this.asientos = new Asiento[filas][columnas];
         for (int i = 0; i < filas; i++)
             for (int j = 0; j < columnas; j++)
                 asientos[i][j] = new Asiento("F" + (i + 1) + "C" + (j + 1));
+    }
+
+    // instancia nueva con la misma ficha pero estado limpio (los asientos son por viaje)
+    public Bus copia() {
+        return new Bus(placa, asientos.length, asientos[0].length);
     }
 
     public String getPlaca() {

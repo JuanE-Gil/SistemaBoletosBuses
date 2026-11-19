@@ -9,17 +9,49 @@ import java.time.format.DateTimeFormatter;
 public class GestorVentas {
     private Viaje[] viajes = new Viaje[20];
     private Boleto[] boletos = new Boleto[200];
+    private Bus[] buses = new Bus[20];
     private int cantidadViajes = 0;
     private int cantidadBoletos = 0;
+    private int cantidadBuses = 0;
 
-    public void agregarViaje(Viaje viaje) {
-        if (buscarViaje(viaje.getCodigo()) != null) {
+    // ---- flota ----
+
+    public void agregarBus(String placa, int filas, int columnas) {
+        if (placa == null || placa.trim().isEmpty()) {
+            throw new IllegalArgumentException("La placa no puede estar vacía.");
+        }
+        if (buscarBus(placa) != null) {
+            throw new IllegalArgumentException("La placa ya existe.");
+        }
+        if (cantidadBuses >= buses.length) {
+            throw new IllegalStateException("Máximo de buses alcanzado (" + buses.length + ").");
+        }
+        // crear primero: si el constructor rechaza las dimensiones, el contador no avanza
+        Bus bus = new Bus(placa, filas, columnas);
+        buses[cantidadBuses++] = bus;
+    }
+
+    public Bus buscarBus(String placa) {
+        for (int i = 0; i < cantidadBuses; i++)
+            if (buses[i].getPlaca().equalsIgnoreCase(placa)) return buses[i];
+        return null;
+    }
+
+    public Viaje agregarViaje(String codigo, Ruta ruta, String placa, String fecha, String hora) {
+        if (buscarViaje(codigo) != null) {
             throw new IllegalArgumentException("El código de viaje ya existe.");
+        }
+        Bus plantilla = buscarBus(placa);
+        if (plantilla == null) {
+            throw new IllegalArgumentException("El bus no está registrado.");
         }
         if (cantidadViajes >= viajes.length) {
             throw new IllegalStateException("Máximo de viajes alcanzado (" + viajes.length + ").");
         }
+        // copia(): cada viaje tiene su propio estado de asientos y equipaje
+        Viaje viaje = new Viaje(codigo, ruta, plantilla.copia(), fecha, hora);
         viajes[cantidadViajes++] = viaje;
+        return viaje;
     }
 
     // ---- búsqueda de viajes (sobrecarga de parámetros) ----
