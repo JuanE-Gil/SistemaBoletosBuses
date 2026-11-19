@@ -1,0 +1,336 @@
+# Guía del proyecto — SistemaBoletosBuses
+
+> Guía de referencia del sistema: estructura, funciones, reglas de negocio y flujo de trabajo.
+> Sirve como base para redactar/mejorar el informe **TALLER PROGRAMACION.md**.
+> El diagrama UML del informe no se modifica desde esta guía.
+
+---
+
+## 1. Compilación y ejecución
+
+### Requisitos
+- **JDK 21** — es el SDK del proyecto (definido en `.idea/misc.xml`: `project-jdk-name="21"`). El bytecode esperado es la **versión 65**.
+
+### Opción A — IntelliJ IDEA
+1. **Build → Rebuild Project** (genera las clases en `out/production/SistemaBoletosBuses/`).
+2. Ejecutar `app.Main`.
+
+> **Si aparece `class file has wrong version 69.0, should be 65.0`:** significa que los `.class` de `out/` los generó un `javac` más nuevo (Java 25) que el SDK 21. Solución: borrar la carpeta `out/` y hacer **Rebuild Project**. IntelliJ no recompila solo porque los `.class` son más nuevos que los `.java`.
+
+### Opción B — Terminal (PowerShell)
+```powershell
+# Compilar (siempre con --release 21 para no pisar la salida de IntelliJ)
+javac --release 21 -encoding UTF-8 -d out\shell-check (Get-ChildItem -Recurse src -Filter *.java | ForEach-Object FullName)
+
+# Ejecutar
+java -cp out\shell-check app.Main
+```
+- `--release 21` fuerza bytecode versión 65 aunque el `javac` del PATH sea más nuevo.
+- `out/shell-check/` es una carpeta aparte: **no** se compila directamente en `out/production/` (esa es de IntelliJ).
+- `out/` está en `.gitignore`: se puede borrar sin impacto en git.
+
+### Persistencia
+Los datos viven **solo en memoria**: al iniciar se cargan 2 viajes demo (`V001`, `V002`) y al salir no se guarda nada. Cada ejecución arranca de cero.
+
+---
+
+## 2. Estructura del código
+
+```
+SistemaBoletosBuses/
+├── TALLER PROGRAMACION.md      # Informe del trabajo final (separado de esta guía)
+├── GUIA.md                     # Este documento
+├── .idea/                      # Configuración de IntelliJ (SDK 21)
+├── out/                        # Artefactos de build (ignorado por git)
+└── src/
+    ├── app/
+    │   └── Main.java           # Menú de consola y flujo de cada opción
+    ├── model/
+    │   ├── Ruta.java           # Origen, destino y tarifa
+    │   ├── Bus.java            # Placa, mapa de asientos y cupo de equipaje
+    │   ├── Asiento.java        # Butaca individual (número + estado)
+    │   ├── Viaje.java          # Código, ruta, bus, fecha y hora
+    │   ├── Cliente.java        # DNI, nombre, apellido, correo, teléfono
+    │   ├── Maleta.java         # Peso y cálculo de sobrepeso
+    │   ├── Pago.java           # Monto, medio de pago y fecha de venta
+    │   └── Boleto.java         # Emisión: cliente, viaje, asiento, pago, maletas
+    ├── service/
+    │   ├── GestorVentas.java   # Núcleo: alta de viajes, venta, anulación, reprogramación
+    │   └── Reportes.java       # Reportes estáticos: total, por ruta, por fecha
+    ├── util/
+    │   └── Validador.java      # Validaciones (DNI, correo, fecha, hora, peso) y lectura de entrada
+    └── exceptions/
+        └── AsientoOcupadoException.java  # Excepción al intentar ocupar un asiento tomado
+```
+
+### Paquetes
+| Paquete | Responsabilidad |
+|---|---|
+| `model` | Datos y sus invariantes (qué es un viaje, un boleto, una maleta…) |
+| `service` | Lógica de negocio: orquesta modelo + validaciones y lanza excepciones |
+| `util` | Validación de entradas y lectura reintentable desde consola |
+| `exceptions` | Excepción de dominio específica (`AsientoOcupadoException`) |
+| `app` | Presentación: menú, prompts y captura de errores hacia el usuario |
+
+---
+
+## 3. Clases y funciones
+
+### 3.1 `model.Ruta`
+Recorrido con su tarifa. `toString` → `Lima - Arequipa (S/ 80.0)`.
+
+| Método | Función |
+|---|---|
+| `Ruta(origen, destino, tarifa)` | Crea la ruta |
+| `getOrigen() / getDestino() / getTarifa()` | Accesores |
+| `toString()` | Formo para mostrar en listados y boletos |
+
+### 3.2 `model.Bus`
+Un bus por viaje: matriz de asientos + contador de maletas. Constante `MAX_MALETAS = 20`.
+
+| Método | Función |
+|---|---|
+| `Bus(placa, filas, columnas)` | Crea la matriz de asientos (`F1C1`, `F1C2`…). **Valida dimensiones**: filas 1–100, columnas 1–50 (si no, `IllegalArgumentException`) |
+| `existe(fila, columna)` | ¿La coordenada está dentro del rango? (base 1) |
+| `asientoLibre(fila, columna)` | Consulta el estado de la butaca |
+| `ocuparAsiento / liberarAsiento(fila, columna)` | Cambia el estado de la butaca |
+| `maletasDisponibles()` | `MAX_MALETAS − maletasCargadas` |
+| `cargarMaleta() / descargarMaleta()` | Incrementa/decrementa el contador de equipaje |
+| `contarAsientosLibres()` | Libres totales (se muestra en cada viaje) |
+| `mostrarMapaAsientos()` | Plano `[ ]` libre / `[X]` ocupado |
+
+### 3.3 `model.Asiento`
+Butaca individual.
+
+| Método | Función |
+|---|---|
+| `Asiento(numeroAsiento)` | Crea libre (`estado = false`) |
+| `ocupar() / liberar()` | Cambia el estado |
+| `estaLibre()` | `!estado` |
+| `getNumeroAsiento() / getEstado()` | Accesores |
+
+### 3.4 `model.Viaje`
+Salida programada. `toString` → `V001 | Lima - Arequipa (S/ 80.0) | 15/11/2026 20:00 | Libres: 19`.
+
+| Método | Función |
+|---|---|
+| `Viaje(codigo, ruta, bus, fecha, hora)` | Crea el viaje (fecha `dd/MM/yyyy`, hora `HH:mm`) |
+| `getCodigo() / getRuta() / getBus() / getFecha()` | Accesores (el código busca sin distinguir mayúsculas) |
+
+### 3.5 `model.Cliente`
+| Método | Función |
+|---|---|
+| `Cliente(dni, nombre, apellido, correo, telefono)` | Registra al pasajero |
+| `getDni() / getNombre() / getApellido() / getCorreo() / getTelefono()` | Accesores |
+| `toString()` | `Apellido, Nombre | DNI | correo | teléfono` |
+
+### 3.6 `model.Maleta`
+Constantes: `LIMITE_KG = 25`, `TARIFA_SOBREPESO = 5.0` (S/ por kg excedido).
+
+| Método | Función |
+|---|---|
+| `Maleta(peso)` | Calcula el sobrepeso en el constructor: `peso > 25 ? (peso − 25) × 5 : 0` |
+| `getPeso() / getSobrepeso()` | Accesores |
+| `toString()` | `30.0 kg (sobrepeso: S/ 25.0)` |
+
+### 3.7 `model.Pago`
+| Método | Función |
+|---|---|
+| `Pago(monto, medioPago, fecha)` | Monto = tarifa + sobrepesos; `fecha` = fecha de venta (`dd/MM/yyyy`) |
+| `getMonto() / getMedioPago() / getFecha()` | Accesores |
+| `toString()` | `S/ 105.0 (EFECTIVO) 18/11/2026` |
+
+### 3.8 `model.Boleto`
+Emisión de un pasaje. Se muestra completo al vender/reprogramar; `[ANULADO]` al final si está anulado.
+
+| Método | Función |
+|---|---|
+| `Boleto(codigo, cliente, viaje, fila, columna, pago, maletas)` | Crea el boleto (activo por defecto) |
+| `getCodigo() / getCliente() / getViaje() / getFila() / getColumna() / getPago() / getMaletas()` | Accesores |
+| `isActivo() / setActivo(boolean)` | Estado de anulación |
+| `reprogramar(nuevoViaje, nuevaFila, nuevaColumna)` | Mueve el boleto a otro viaje/asiento (**el pago no se recalcula**) |
+| `toString()` | Ficha completa: cliente, ruta, asiento, equipaje, pago |
+
+### 3.9 `service.GestorVentas` — núcleo del sistema
+Arreglos fijos: **20 viajes** y **200 boletos**.
+
+| Método | Función y validaciones (en orden) |
+|---|---|
+| `agregarViaje(viaje)` | Alta de viaje. Rechaza **código duplicado** (`IllegalArgumentException`) y **capacidad llena** (`IllegalStateException`) |
+| `buscarViaje(código)` | **Sobrecarga 1:** exacto por código, sin distinguir mayúsculas; `null` si no existe |
+| `buscarViaje(origen, destino)` | **Sobrecarga 2:** por ruta completa, sin fecha |
+| `buscarViaje(origen, destino, fecha)` | **Sobrecarga 3:** añade fecha exacta; base de las otras dos |
+| `venderBoleto(codViaje, cliente, fila, col, medioPago, maletas)` | Valida: viaje existe → asiento en rango → asiento libre → 1–2 maletas → pesos > 0 → cupo de equipaje → capacidad de boletos. Después: calcula monto (tarifa + sobrepesos), crea `Pago` con la fecha de hoy, **ocupa el asiento**, carga las maletas y emite el código `B0001`, `B0002`… (nunca se reutilizan) |
+| `reprogramarBoleto(codBoleto, codNuevoViaje, fila, col)` | Valida: boleto activo → viaje destino existe → asiento destino libre → cupo de equipaje **solo si el bus es distinto** (si es el mismo bus, el equipaje no cambia: neto 0). Transfiere asiento y maletas entre buses y actualiza el boleto |
+| `anularBoleto(código)` | Solo boletos activos: libera el asiento, descarga las maletas y marca `activo = false` |
+| `listarViajes()` | Texto con todos los viajes |
+| `getBoletos()` | **Copia** del arreglo de boletos (los reportes no pueden alterar el estado) |
+
+### 3.10 `service.Reportes` — métodos estáticos
+Todos trabajan sobre una copia y **solo cuentan boletos activos**.
+
+| Método | Función |
+|---|---|
+| `total(Boleto[])` | Boletos vendidos + total recaudado (cierre de caja) |
+| `porRuta(Boleto[])` | Agrupa por `origen - destino`: cantidad y monto |
+| `porFecha(Boleto[])` | Agrupa por **fecha del viaje**: cantidad y monto |
+
+### 3.11 `util.Validador`
+| Método | Función |
+|---|---|
+| `validarDni(dni)` | Exactamente 8 dígitos |
+| `validarCorreo(correo)` | Formato `algo@dominio.tld` |
+| `validarFecha(fecha)` | `dd/MM/yyyy` **real** (rechaza `99/99/9999`, `31/02/2026`… usa `ResolverStyle.STRICT`) |
+| `validarHora(hora)` | `HH:mm` estricto (`00:00`–`23:59`) |
+| `validarPeso(peso)` | Finito y > 0 (rechaza `Infinity`/`NaN`) |
+| `leerEntero(sc, mensaje)` | Lee un entero **reintentando** hasta recibir uno válido |
+| `leerDecimal(sc, mensaje)` | Lee un decimal **reintentando** hasta recibir uno válido |
+
+### 3.12 `exceptions.AsientoOcupadoException`
+`RuntimeException` con mensaje: se lanza desde `GestorVentas` cuando el asiento ya está ocupado (venta o reprogramación) y la captura `Main` para mostrar el error sin caer el programa.
+
+### 3.13 `app.Main`
+| Método | Función |
+|---|---|
+| `main(args)` | Crea `GestorVentas`, carga datos demo y corre el bucle del menú |
+| `mostrarMenu()` | Imprime las 10 opciones |
+| `buscar(sc, g)` | Opción 2: pide origen/destino/fecha y usa la sobrecarga que corresponda |
+| `verMapa(sc, g)` | Opción 3: plano del bus del viaje indicado |
+| `vender(sc, g)` | Opción 4: pide viaje, cliente (DNI/correo validados), asiento, maletas y pago; captura las 3 excepciones posibles |
+| `pedirMaletas(sc, g, cod)` | Pide maleta 1; ofrece la adicional **solo si** pesa ≤ 25 kg y el bus tiene cupo para 2 |
+| `leerPeso(sc, mensaje)` | Pide peso validando con `validarPeso` (reintenta) |
+| `anular(sc, g)` | Opción 5 |
+| `reprogramar(sc, g)` | Opción 6: muestra el plano del viaje destino antes de pedir el asiento; captura excepciones |
+| `elegirMedioPago(sc)` | 1. EFECTIVO · 2. TARJETA · 3. YAPE (reintenta fuera de rango) |
+| `registrarViaje(sc, g)` | Opción 9: alta de viaje con todas las validaciones (ver §4.9) |
+| `cargarDatosDemo(g)` | Precarga `V001` (Lima–Arequipa) y `V002` (Lima–Trujillo) |
+
+---
+
+## 4. Flujo de trabajo — menú y operaciones
+
+Menú principal (consola):
+
+```
+=== VENTA DE BOLETOS ===
+1. Ver viajes                6. Reprogramar boleto
+2. Buscar viajes             7. Reporte de ventas
+3. Ver mapa de asientos      8. Reporte por ruta
+4. Vender boleto             9. Registrar viaje
+5. Anular boleto            10. Reporte por fecha
+0. Salir
+```
+
+### 4.1 Ver viajes (1)
+Lista todos los viajes con tarifa, fecha/hora y asientos libres. Sin entradas.
+
+### 4.2 Buscar viajes (2) — sobrecarga de parámetros
+1. Pide **origen**, **destino** y **fecha** (vacío = cualquier fecha).
+2. Si hay fecha → `buscarViaje(origen, destino, fecha)`; si no → `buscarViaje(origen, destino)`.
+3. Muestra resultados o `No se encontraron viajes.`
+
+### 4.3 Ver mapa de asientos (3)
+Pide el código del viaje y muestra el plano: `[ ]` libre, `[X]` ocupado.
+
+### 4.4 Vender boleto (4) — flujo completo
+1. **Código de viaje** → debe existir.
+2. **DNI** → 8 dígitos (rechaza antes de seguir).
+3. **Nombre, apellido** → libres.
+4. **Correo** → `validarCorreo` (rechaza antes de seguir).
+5. **Teléfono** → libre.
+6. **Fila y columna** → leídos como enteros; se validan contra el bus (rango y que esté libre).
+7. **Maletas** (ver §5): peso 1 siempre; adicional solo si califica.
+8. **Medio de pago** → 1/2/3.
+9. `GestorVentas.venderBoleto` valida todo de nuevo y emite el boleto; los errores se muestran como `No se pudo vender: …` sin caer el programa.
+
+### 4.5 Anular boleto (5)
+Pide el código; si existe y está activo: libera asiento + maletas. `Boleto no encontrado o ya anulado.` en caso contrario (doble anulación rechazada).
+
+### 4.6 Reprogramar boleto (6)
+1. Código del boleto (debe estar activo) y código del viaje destino (debe existir).
+2. Muestra el plano del viaje destino y pide nueva fila/columna.
+3. Valida asiento libre y cupo de equipaje del bus destino (solo si el bus cambia).
+4. Transfiere asiento y maletas; el **pago se conserva** tal cual.
+
+### 4.7 Reportes (7, 8, 10)
+| Opción | Salida |
+|---|---|
+| 7 · Total | `Boletos vendidos: N | Total recaudado: S/ X` |
+| 8 · Por ruta | `Lima - Arequipa: 2 boletos | S/ 160.0` |
+| 10 · Por fecha | `15/11/2026: 1 boletos | S/ 80.0` (agrupa por **fecha del viaje**) |
+
+Los tres ignoran boletos anulados.
+
+### 4.8 Registrar viaje (9)
+1. **Código** → no vacío y **único** (rechaza al instante si ya existe).
+2. **Origen y destino** → no vacíos.
+3. **Tarifa** → decimal > 0 y finito (reintenta: `0`, `-5`, `Infinity`…).
+4. **Fecha** → `dd/MM/yyyy` real, estricta (reintenta: `99/99/9999`, `31/02/2026`…).
+5. **Hora** → `HH:mm` estricto (reintenta: `25:99`, `8:30`…).
+6. **Placa** → no vacía.
+7. **Filas y columnas** → enteros; el constructor de `Bus` valida 1–100 × 1–50.
+8. Si todo está bien: `Viaje registrado:` con el viaje nuevo; si no: `No se pudo registrar: …`.
+
+> El alta valida en dos niveles: los prompts cortos en `Main` (buena experiencia) y las reglas duras en `GestorVentas`/`Bus` (garantía del estado, válida para cualquier futuro llamador).
+
+### 4.9 Venta con equipaje — detalle (opción 4)
+```
+Peso maleta 1 → siempre
+  ├─ > 25 kg  → SIN maleta adicional (sobrepeso se cobra igual)
+  └─ ≤ 25 kg  → ¿adicionar? (sí/no)
+       ├─ el bus debe tener cupo para 2  → si no: "Sin disponibilidad para maleta adicional."
+       └─ peso 2 → se cobra su sobrepeso si lo tiene
+```
+
+---
+
+## 5. Reglas de negocio (resumen para el informe)
+
+| Tema | Regla |
+|---|---|
+| **Equipaje** | Límite **25 kg por maleta**; excedente cobra **S/ 5 por kg** |
+| **Maleta adicional** | Solo si la primera pesa **≤ 25 kg** y el bus tiene **cupo para 2** («según la disponibilidad») |
+| **Cupo de equipaje** | Máx. **2 maletas por boleto** y **20 maletas por bus** (`Bus.MAX_MALETAS`) |
+| **Asientos** | Matriz 1-based; venta y reprogramación verifican rango y libertad; anulación libera |
+| **Reprogramación** | Conserva el pago; el chequeo de cupo solo aplica si el bus cambia (mismo bus = neto 0) |
+| **Anulación** | Solo boletos activos; libera asiento y equipaje; marca `[ANULADO]` |
+| **Códigos** | Viaje: el dado en el alta (único). Boleto: `B0001`, `B0002`… correlativo, **nunca reutilizado** |
+| **Reportes** | Solo boletos activos; por ruta, por fecha del viaje, y total |
+| **Capacidades** | 20 viajes · 200 boletos · buses de 1–100 filas × 1–50 columnas |
+| **Búsqueda** | Sobrecarga `buscarViaje(código)` / `(origen, destino)` / `(origen, destino, fecha)`, sin distinguir mayúsculas |
+| **Validaciones** | DNI 8 dígitos · correo con formato · fecha real estricta · hora estricta · peso finito > 0 |
+
+---
+
+## 6. Verificación (baterías ejecutadas)
+
+Compilación limpia con `javac --release 21` y pruebas por script (entradas piped a `app.Main`):
+
+1. **Fuzz de entradas inválidas** — menú, DNI, correo, pesos, coordenadas: todo rechazado con reintento, sin excepciones.
+2. **Invariantes de estado** — doble anulación, reprogramar boleto anulado/inexistente/mismo asiento.
+3. **Cupo de 20 maletas** — 10 boletos × 2 maletas: venta rechazada al llenar; reprogramación a bus lleno rechazada; mismo bus con cupo lleno permitido (neto 0).
+4. **Registrar viaje** — alta correcta; rechazos: código duplicado, código/origen vacíos, tarifa `0/-5/Infinity`, fecha inexistente, hora inválida, dimensiones fuera de rango.
+5. **Capacidad de viajes** — 18 altas seguidas (total 20) y rechazo del 21.º.
+6. **Reporte por fecha** — 3 fechas, anulación (fila desaparece), reprogramación (fila migra de fecha), totales cuadrados con `total` y `porRuta`.
+7. **Regresión de equipaje** — sobrepeso fraccional (25.5 kg → S/ 2.5) y extremos (30 kg → S/ 25 → boleto S/ 105).
+
+---
+
+## 7. Flujo de desarrollo (git)
+
+- `master`: estado estable del proyecto.
+- Ramas `feature/…` para cada caso de uso; se fusionan a `master` con **fast-forward** tras pasar las pruebas.
+- Commits en español, descriptivos del caso de uso.
+- Historial: `13bb3a0` refactor base → `6e79cd1` reportes → `ec288cb` equipaje → `2c571af` fixes de pruebas → `7a6ef8d` registrar viaje + reporte por fecha.
+
+---
+
+## 8. Pendientes conocidos para el informe
+
+*(Notas para actualizar TALLER PROGRAMACION.md — esta guía no lo modifica.)*
+
+1. **Lista de clases UML (sección 2.1):** el informe dice *«Ruta, Bus, Viaje, Asiento, Cliente, Boleto y Vendedor»* → falta **`Maleta`** y **`Pago`**, y **sobra `Vendedor`** (el sistema no tiene roles ni login). Conviene decidir si el diagrama incluye también `GestorVentas`, `Reportes` y `Validador`.
+2. **Reportes (2.1):** dice «ventas por ruta, fecha y vendedor, y cierre de caja» → ya existen **total**, **por ruta** y **por fecha**; no hay reporte por vendedor (coherente con la decisión de no tener roles).
+3. **Menú:** el informe habla de «registrar rutas, buses y viajes» — ahora implementado como **opción 9 (Registrar viaje)**, que crea ruta + bus + viaje en un solo paso.
+4. **Secciones vacías del informe:** 2.2 pantallazos (5 imágenes), 3.1 estructura del código fuente (§2 de esta guía), 3.2 ejecutables, 4 conclusiones (mín. 3), bibliografía (mín. 3), anexos.
+5. **Límites de diseño asumidos** (mencionar si aplica): cada viaje instancia su propio `Bus` aunque la placa se repita; el pago no se recalcula al reprogramar; los datos no persisten entre ejecuciones.
