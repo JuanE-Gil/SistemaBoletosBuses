@@ -185,7 +185,7 @@ public class Main {
         try {
             Boleto b = g.reprogramarBoleto(codBol, codViaje, nuevaFila, nuevaCol);
             System.out.println("\nBoleto reprogramado:\n" + b);
-        } catch (AsientoOcupadoException | IllegalArgumentException e) {
+        } catch (AsientoOcupadoException | IllegalArgumentException | IllegalStateException e) {
             System.out.println("No se pudo reprogramar: " + e.getMessage());
         }
     }

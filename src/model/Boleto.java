@@ -8,7 +8,7 @@ public class Boleto {
     private int columna;
     private final Pago pago;
     private boolean activo = true;
-    private Maleta[] maletas;
+    private final Maleta[] maletas;
 
     public Boleto(String codigo, Cliente cliente, Viaje viaje, int fila, int columna, Pago pago, Maleta[] maletas) {
         this.codigo = codigo;

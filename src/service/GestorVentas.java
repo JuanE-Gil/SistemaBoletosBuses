@@ -108,7 +108,8 @@ public class GestorVentas {
             throw new AsientoOcupadoException("El asiento ya está ocupado.");
         }
         Bus busViejo = boleto.getViaje().getBus();
-        if (busNuevo.maletasDisponibles() < boleto.getMaletas().length) {
+        // si es el mismo bus el equipaje no cambia de cupo (neto 0): solo validar destinos distintos
+        if (busNuevo != busViejo && busNuevo.maletasDisponibles() < boleto.getMaletas().length) {
             throw new IllegalStateException("Cupo de equipaje lleno en el bus destino.");
         }
         busNuevo.ocuparAsiento(nuevaFila, nuevaColumna);

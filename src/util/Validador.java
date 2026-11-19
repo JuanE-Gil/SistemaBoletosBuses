@@ -24,7 +24,8 @@ public class Validador {
     }
 
     public static boolean validarPeso(double peso) {
-        return peso > 0;
+        // isFinite excluye "Infinity"/"NaN" que Double.parseDouble acepta como número
+        return Double.isFinite(peso) && peso > 0;
     }
 
     public static int leerEntero(Scanner sc, String mensaje) {
