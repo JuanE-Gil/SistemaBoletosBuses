@@ -44,7 +44,10 @@ SistemaBoletosBuses/
 ├── out/                        # Artefactos de build (ignorado por git)
 └── src/
     ├── app/
-    │   └── Main.java           # Menú de consola y flujo de cada opción
+    │   ├── Main.java           # Navegación: menú principal, submenús y datos demo
+    │   ├── Consultas.java       # Flujos del submenú Consultas (buscar, mapa)
+    │   ├── Boletos.java         # Flujos del submenú Boletos (vender, anular, reprogramar)
+    │   └── Registro.java        # Flujos del submenú Registro (bus y viaje)
     ├── model/
     │   ├── Ruta.java           # Origen, destino y tarifa
     │   ├── Bus.java            # Placa, mapa de asientos y cupo de equipaje
@@ -190,25 +193,38 @@ Todos trabajan sobre una copia y **solo cuentan boletos activos**.
 | `leerDecimal(sc, mensaje)` | Lee un decimal **reintentando** hasta recibir uno válido |
 
 ### 3.12 `exceptions.AsientoOcupadoException`
-`RuntimeException` con mensaje: se lanza desde `GestorVentas` cuando el asiento ya está ocupado (venta o reprogramación) y la captura `Main` para mostrar el error sin caer el programa.
+`RuntimeException` con mensaje: se lanza desde `GestorVentas` cuando el asiento ya está ocupado (venta o reprogramación) y la capturan `Boletos`/`Registro` para mostrar el error sin caer el programa.
 
-### 3.13 `app.Main`
+### 3.13 `app.Main` — solo navegación
 | Método | Función |
 |---|---|
 | `main(args)` | Crea `GestorVentas`, carga datos demo y corre el bucle del menú principal (4 categorías) |
 | `mostrarMenu()` | Imprime las 4 categorías: Consultas, Boletos, Registro, Reportes |
-| `submenuConsultas / submenuBoletos / submenuRegistro / submenuReportes(sc, g)` | Cada uno imprime sus opciones, las despacha en un `switch` y **vuelve a mostrarse** hasta que se pide `0. Volver` |
-| `buscar(sc, g)` | Consultas→2: pide origen/destino/fecha y usa la sobrecarga que corresponda |
-| `verMapa(sc, g)` | Consultas→3: plano del bus del viaje indicado |
-| `vender(sc, g)` | Boletos→1: pide viaje, cliente (DNI/correo validados), asiento, maletas y pago; captura las 3 excepciones posibles |
+| `submenu(sc, título, opciones...)` | Helper: imprime `--- TÍTULO ---`, numera las opciones (`1…n`), añade `0. Volver` y devuelve la opción leída |
+| `submenuConsultas / submenuBoletos / submenuRegistro / submenuReportes(sc, g)` | Usan el helper y despachan en un `switch` a la clase de la categoría; **vuelven a mostrarse** hasta que se pide `0. Volver` |
+| `cargarDatosDemo(g)` | Registra los buses `ABC-123` y `XYZ-789` en la flota y crea `V001` (Lima–Arequipa) y `V002` (Lima–Trujillo) referenciándolos |
+
+### 3.14 `app.Consultas` — flujos del submenú Consultas
+| Método | Función |
+|---|---|
+| `buscar(sc, g)` |→ 2: pide origen/destino/fecha y usa la sobrecarga que corresponda |
+| `verMapa(sc, g)` |→ 3: plano del bus del viaje indicado |
+
+### 3.15 `app.Boletos` — flujos del submenú Boletos
+| Método | Función |
+|---|---|
+| `vender(sc, g)` |→ 1: pide viaje, cliente (DNI/correo validados), asiento, maletas y pago; captura las 3 excepciones posibles |
 | `pedirMaletas(sc, g, cod)` | Pide maleta 1; ofrece la adicional **solo si** pesa ≤ 25 kg y el bus tiene cupo para 2 |
 | `leerPeso(sc, mensaje)` | Pide peso validando con `validarPeso` (reintenta) |
-| `anular(sc, g)` | Boletos→2 |
-| `reprogramar(sc, g)` | Boletos→3: muestra el plano del viaje destino antes de pedir el asiento; captura excepciones |
-| `elegirMedioPago(sc)` | 1. EFECTIVO · 2. TARJETA · 3. YAPE (reintenta fuera de rango) |
-| `registrarBus(sc, g)` | Registro→1: placa (no vacía, no duplicada) + filas/columnas (ver §4.8) |
-| `registrarViaje(sc, g)` | Registro→2: alta de viaje con todas las validaciones; **pide la placa de un bus ya registrado** (ver §4.9) |
-| `cargarDatosDemo(g)` | Registra los buses `ABC-123` y `XYZ-789` en la flota y crea `V001` (Lima–Arequipa) y `V002` (Lima–Trujillo) referenciándolos |
+| `anular(sc, g)` |→ 2 |
+| `reprogramar(sc, g)` |→ 3: muestra el plano del viaje destino antes de pedir el asiento; captura excepciones |
+| `elegirMedioPago(sc)` | 1. EFECTIVO · 2. TARJETA · 3. YAPE (reintenta fuera de rango); constante `MEDIOS_DE_PAGO` |
+
+### 3.16 `app.Registro` — flujos del submenú Registro
+| Método | Función |
+|---|---|
+| `registrarBus(sc, g)` |→ 1: placa (no vacía, no duplicada) + filas/columnas (ver §4.8) |
+| `registrarViaje(sc, g)` |→ 2: alta de viaje con todas las validaciones; **pide la placa de un bus ya registrado** (ver §4.9) |
 
 ---
 
@@ -282,7 +298,7 @@ Los tres ignoran boletos anulados.
 6. **Placa** → debe existir en la flota; si no: `No existe ese bus. Regístrelo primero (menú Registro).` **No pide filas/columnas**: el viaje hereda la ficha del bus registrado y crea su propio estado con `copia()`.
 7. Si todo está bien: `Viaje registrado:` con el viaje nuevo; si no: `No se pudo registrar: …`.
 
-> El alta valida en dos niveles: los prompts cortos en `Main` (buena experiencia) y las reglas duras en `GestorVentas`/`Bus` (garantía del estado, válida para cualquier futuro llamador): solo `GestorVentas` instancia los `Bus` de los viajes, siempre desde la flota.
+> El alta valida en dos niveles: los prompts cortos en la capa de `app` (`Registro`, buena experiencia) y las reglas duras en `GestorVentas`/`Bus` (garantía del estado, válida para cualquier futuro llamador): solo `GestorVentas` instancia los `Bus` de los viajes, siempre desde la flota.
 
 ### 4.10 Venta con equipaje — detalle (Boletos → 1)
 ```
@@ -336,7 +352,7 @@ Compilación limpia con `javac --release 21` y pruebas por script (entradas pipe
 - `master`: estado estable del proyecto.
 - Ramas `feature/…` para cada caso de uso; se fusionan a `master` con **fast-forward** tras pasar las pruebas.
 - Commits en español, descriptivos del caso de uso.
-- Historial: `13bb3a0` refactor base → `6e79cd1` reportes → `ec288cb` equipaje → `2c571af` fixes de pruebas → `7a6ef8d` registrar viaje + reporte por fecha → `2f386ad` guía → `8506456` submenús + flota.
+- Historial: `13bb3a0` refactor base → `6e79cd1` reportes → `ec288cb` equipaje → `2c571af` fixes de pruebas → `7a6ef8d` registrar viaje + reporte por fecha → `2f386ad` guía → `8506456` submenús + flota → (master) `c85ce5b` guía de flota → refactor de `Main` en `app/Consultas|Boletos|Registro`.
 
 ---
 
