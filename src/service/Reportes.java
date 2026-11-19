@@ -41,4 +41,30 @@ public class Reportes {
               .append(" boletos | S/ ").append(totales[j]).append("\n");
         return sb.toString();
     }
+
+    public static String porFecha(Boleto[] boletos) {
+        String[] fechas = new String[boletos.length];
+        int[] cantidades = new int[boletos.length];
+        double[] totales = new double[boletos.length];
+        int n = 0;
+
+        for (int i = 0; i < boletos.length; i++) {
+            Boleto boleto = boletos[i];
+            if (!boleto.isActivo()) continue;
+            String fecha = boleto.getViaje().getFecha();
+            int pos = -1;
+            for (int j = 0; j < n; j++)
+                if (fechas[j].equals(fecha)) pos = j;
+            if (pos == -1) { pos = n; fechas[n++] = fecha; }
+            cantidades[pos]++;
+            totales[pos] += boleto.getPago().getMonto();
+        }
+
+        StringBuilder sb = new StringBuilder("--- Ventas por fecha ---\n");
+        if (n == 0) sb.append("Sin ventas.\n");
+        for (int j = 0; j < n; j++)
+            sb.append(fechas[j]).append(": ").append(cantidades[j])
+              .append(" boletos | S/ ").append(totales[j]).append("\n");
+        return sb.toString();
+    }
 }

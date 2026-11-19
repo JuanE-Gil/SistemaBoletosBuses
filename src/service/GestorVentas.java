@@ -13,9 +13,13 @@ public class GestorVentas {
     private int cantidadBoletos = 0;
 
     public void agregarViaje(Viaje viaje) {
-        if (cantidadViajes < viajes.length) {
-            viajes[cantidadViajes++] = viaje;
+        if (buscarViaje(viaje.getCodigo()) != null) {
+            throw new IllegalArgumentException("El código de viaje ya existe.");
         }
+        if (cantidadViajes >= viajes.length) {
+            throw new IllegalStateException("Máximo de viajes alcanzado (" + viajes.length + ").");
+        }
+        viajes[cantidadViajes++] = viaje;
     }
 
     // ---- búsqueda de viajes (sobrecarga de parámetros) ----

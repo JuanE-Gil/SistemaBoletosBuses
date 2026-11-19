@@ -8,6 +8,10 @@ public class Bus {
     private int maletasCargadas = 0;
 
     public Bus(String placa, int filas, int columnas) {
+        // límites: filas 0/negativas rompen contarAsientosLibres, tamaños enormes agotan memoria
+        if (filas < 1 || filas > 100 || columnas < 1 || columnas > 50) {
+            throw new IllegalArgumentException("Dimensiones de bus inválidas (filas 1-100, columnas 1-50).");
+        }
         this.placa = placa;
         this.asientos = new Asiento[filas][columnas];
         for (int i = 0; i < filas; i++)

@@ -45,6 +45,12 @@ public class Main {
                 case 8:
                     System.out.println(Reportes.porRuta(gestor.getBoletos()));
                     break;
+                case 9:
+                    registrarViaje(sc, gestor);
+                    break;
+                case 10:
+                    System.out.println(Reportes.porFecha(gestor.getBoletos()));
+                    break;
                 case 0:
                     System.out.println("Hasta pronto.");
                     break;
@@ -64,6 +70,8 @@ public class Main {
         System.out.println("6. Reprogramar boleto");
         System.out.println("7. Reporte de ventas");
         System.out.println("8. Reporte por ruta");
+        System.out.println("9. Registrar viaje");
+        System.out.println("10. Reporte por fecha");
         System.out.println("0. Salir");
     }
 
@@ -198,6 +206,65 @@ public class Main {
             op = Validador.leerEntero(sc, "Medio de pago: ");
         } while (op < 1 || op > MEDIOS_DE_PAGO.length);
         return op;
+    }
+
+    private static void registrarViaje(Scanner sc, GestorVentas g) {
+        System.out.print("Código de viaje: ");
+        String cod = sc.nextLine().trim();
+        if (cod.isEmpty()) {
+            System.out.println("El código no puede estar vacío.");
+            return;
+        }
+        if (g.buscarViaje(cod) != null) {
+            System.out.println("Ese código ya existe.");
+            return;
+        }
+
+        System.out.print("Origen: ");
+        String origen = sc.nextLine().trim();
+        System.out.print("Destino: ");
+        String destino = sc.nextLine().trim();
+        if (origen.isEmpty() || destino.isEmpty()) {
+            System.out.println("Origen y destino no pueden estar vacíos.");
+            return;
+        }
+
+        double tarifa;
+        while (true) {
+            tarifa = Validador.leerDecimal(sc, "Tarifa (S/): ");
+            if (Double.isFinite(tarifa) && tarifa > 0) break;
+            System.out.println("Tarifa inválida (debe ser mayor a 0).");
+        }
+
+        String fecha;
+        while (true) {
+            System.out.print("Fecha (dd/MM/yyyy): ");
+            fecha = sc.nextLine().trim();
+            if (Validador.validarFecha(fecha)) break;
+            System.out.println("Fecha inválida.");
+        }
+
+        String hora;
+        while (true) {
+            System.out.print("Hora (HH:mm): ");
+            hora = sc.nextLine().trim();
+            if (Validador.validarHora(hora)) break;
+            System.out.println("Hora inválida.");
+        }
+
+        System.out.print("Placa del bus: ");
+        String placa = sc.nextLine().trim();
+        int filas = Validador.leerEntero(sc, "Filas de asientos: ");
+        int columnas = Validador.leerEntero(sc, "Columnas de asientos: ");
+
+        try {
+            Viaje viaje = new Viaje(cod, new Ruta(origen, destino, tarifa),
+                    new Bus(placa, filas, columnas), fecha, hora);
+            g.agregarViaje(viaje);
+            System.out.println("\nViaje registrado:\n" + viaje);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("No se pudo registrar: " + e.getMessage());
+        }
     }
 
     private static void cargarDatosDemo(GestorVentas g) {
