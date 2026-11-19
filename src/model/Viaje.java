@@ -1,11 +1,11 @@
 package model;
 
 public class Viaje {
-    private String codigo;
-    private Ruta ruta;
-    private Bus bus;
-    private String fecha;
-    private String hora;
+    private final String codigo;
+    private final Ruta ruta;
+    private final Bus bus;
+    private final String fecha;
+    private final String hora;
 
     public Viaje(String codigo, Ruta ruta, Bus bus, String fecha, String hora) {
         this.codigo = codigo;

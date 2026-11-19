@@ -1,12 +1,12 @@
 package model;
 
 public class Boleto {
-    private String codigo;
-    private Cliente cliente;
+    private final String codigo;
+    private final Cliente cliente;
     private Viaje viaje;
     private int fila;
     private int columna;
-    private Pago pago;
+    private final Pago pago;
     private boolean activo = true;
 
     public Boleto(String codigo, Cliente cliente, Viaje viaje, int fila, int columna, Pago pago) {

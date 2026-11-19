@@ -119,43 +119,7 @@ public class GestorVentas {
         return sb.toString();
     }
 
-    public String reporteVentas() {
-        double total = 0;
-        int vendidos = 0;
-        for (int i = 0; i < cantidadBoletos; i++) {
-            if (boletos[i].isActivo()) {
-                total += boletos[i].getPago().getMonto();
-                vendidos++;
-            }
-        }
-        return "Boletos vendidos: " + vendidos + " | Total recaudado: S/ " + total;
-    }
-
-    public String reportePorRuta() {
-        // como máximo hay una ruta distinta por viaje: tope = capacidad de viajes
-        String[] rutas = new String[viajes.length];
-        int[] cantidades = new int[viajes.length];
-        double[] totales = new double[viajes.length];
-        int n = 0;
-
-        for (int i = 0; i < cantidadBoletos; i++) {
-            Boleto boleto = boletos[i];
-            if (!boleto.isActivo()) continue;
-            Ruta r = boleto.getViaje().getRuta();
-            String ruta = r.getOrigen() + " - " + r.getDestino();
-            int pos = -1;
-            for (int j = 0; j < n; j++)
-                if (rutas[j].equals(ruta)) pos = j;
-            if (pos == -1) { pos = n; rutas[n++] = ruta; }
-            cantidades[pos]++;
-            totales[pos] += boleto.getPago().getMonto();
-        }
-
-        StringBuilder sb = new StringBuilder("--- Ventas por ruta ---\n");
-        if (n == 0) sb.append("Sin ventas.\n");
-        for (int j = 0; j < n; j++)
-            sb.append(rutas[j]).append(": ").append(cantidades[j])
-              .append(" boletos | S/ ").append(totales[j]).append("\n");
-        return sb.toString();
+    public Boleto[] getBoletos() {
+        return java.util.Arrays.copyOf(boletos, cantidadBoletos);
     }
 }

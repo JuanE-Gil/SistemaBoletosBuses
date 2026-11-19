@@ -3,6 +3,7 @@ package app;
 import exceptions.AsientoOcupadoException;
 import model.*;
 import service.GestorVentas;
+import service.Reportes;
 import util.Validador;
 
 import java.util.Scanner;
@@ -39,10 +40,10 @@ public class Main {
                     reprogramar(sc, gestor);
                     break;
                 case 7:
-                    System.out.println(gestor.reporteVentas());
+                    System.out.println(Reportes.total(gestor.getBoletos()));
                     break;
                 case 8:
-                    System.out.println(gestor.reportePorRuta());
+                    System.out.println(Reportes.porRuta(gestor.getBoletos()));
                     break;
                 case 0:
                     System.out.println("Hasta pronto.");

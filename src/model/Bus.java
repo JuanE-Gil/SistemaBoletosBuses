@@ -20,7 +20,6 @@ public class Bus {
         return fila >= 1 && fila <= asientos.length && columna >= 1 && columna <= asientos[0].length;
     }
 
-    // delegación al Asiento correspondiente: Bus solo localiza la celda
     public boolean asientoLibre(int fila, int columna) {
         return asientos[fila - 1][columna - 1].estaLibre();
     }
