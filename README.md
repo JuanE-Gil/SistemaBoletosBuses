@@ -1,8 +1,6 @@
-# Guía del proyecto — SistemaBoletosBuses
+# SistemaBoletosBuses
 
 > Guía de referencia del sistema: estructura, funciones, reglas de negocio y flujo de trabajo.
-> Sirve como base para redactar/mejorar el informe **TALLER PROGRAMACION.md**.
-> El diagrama UML del informe no se modifica desde esta guía.
 
 ---
 
@@ -38,8 +36,7 @@ Los datos viven **solo en memoria**: al iniciar se cargan 2 viajes demo (`V001`,
 
 ```
 SistemaBoletosBuses/
-├── TALLER PROGRAMACION.md      # Informe del trabajo final (separado de esta guía)
-├── GUIA.md                     # Este documento
+├── README.md                    # Este documento
 ├── .idea/                      # Configuración de IntelliJ (SDK 21)
 ├── out/                        # Artefactos de build (ignorado por git)
 └── src/
@@ -377,7 +374,7 @@ Compilación limpia con `javac --release 21` y pruebas por script (entradas pipe
 
 ## 8. Pendientes conocidos para el informe
 
-*(Notas para actualizar TALLER PROGRAMACION.md — esta guía no lo modifica.)*
+*(Notas de mejora abiertas — ver §8.)*
 
 1. **Lista de clases UML (sección 2.1):** el informe dice *«Ruta, Bus, Viaje, Asiento, Cliente, Boleto y Vendedor»* → falta **`Maleta`** y **`Pago`**, y **sobra `Vendedor`** (el sistema no tiene roles ni login). Conviene decidir si el diagrama incluye también `GestorVentas`, `Reportes` y `Validador`.
 2. **Reportes (2.1):** dice «ventas por ruta, fecha y vendedor, y cierre de caja» → ya existen **total**, **por ruta** y **por fecha**; no hay reporte por vendedor (coherente con la decisión de no tener roles).
