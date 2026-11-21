@@ -368,13 +368,12 @@ Compilación limpia con `javac --release 21` y pruebas por script (entradas pipe
 - `master`: estado estable del proyecto.
 - Ramas `feature/…` (casos de uso) y `refactor/…` (refactors) para cada cambio; se fusionan a `master` con **fast-forward** tras pasar las pruebas.
 - Commits en español, descriptivos del caso de uso.
-- Historial: `13bb3a0` refactor base → `6e79cd1` reportes → `ec288cb` equipaje → `2c571af` fixes de pruebas → `7a6ef8d` registrar viaje + reporte por fecha → `2f386ad` guía → `8506456` submenús + flota → `c85ce5b` guía de flota (fusionado a `master`) → `438b0fd` modulariza `Main` en `app/Consultas|Boletos|Registro` → `43d9406` guía modular.
+- Historial: `13bb3a0` refactor base → `6e79cd1` reportes → `13099fd` equipaje → `c34b907` fixes de pruebas → `e29a0c2` registrar viaje + reporte por fecha → `2226747` guía → `b7c8699` submenús + flota → `7f15f09` guía de flota (fusionado a `master`) → `4d3f385` modulariza `Main` en `app/Consultas|Boletos|Registro` → `6762900` guía modular → `6dd5819` batería de regresión → `a2a3eb9` atributos → `fb57a2e` `.gitignore` → `6743001` informe → `README.md`.
+  - *Historial reescrito con `git filter-repo` para eliminar `TALLER PROGRAMACION.md` por completo (también de los commits antiguos); los hashes previos a `13099fd` no cambiaron.*
 
 ---
 
-## 8. Pendientes conocidos para el informe
-
-*(Notas de mejora abiertas — ver §8.)*
+## 8. Pendientes y límites conocidos
 
 1. **Lista de clases UML (sección 2.1):** el informe dice *«Ruta, Bus, Viaje, Asiento, Cliente, Boleto y Vendedor»* → falta **`Maleta`** y **`Pago`**, y **sobra `Vendedor`** (el sistema no tiene roles ni login). Conviene decidir si el diagrama incluye también `GestorVentas`, `Reportes` y `Validador`.
 2. **Reportes (2.1):** dice «ventas por ruta, fecha y vendedor, y cierre de caja» → ya existen **total**, **por ruta** y **por fecha**; no hay reporte por vendedor (coherente con la decisión de no tener roles).
